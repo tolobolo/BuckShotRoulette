@@ -2,23 +2,27 @@ import random
 
 
 class Dealer:
-    def steps(self, bullet):
+    def steps(self, game):
         print("dealer turn")
-        if bullet == "blank":
+        if game.bullet == "blank":
             print("Dealer: I will shot my self")
-            actions.shot()
-        elif bullet == "bang":
+            actions.shot(game)
+        elif game.bullet == "bang":
             print("Dealer: I will shot you")
-            actions.shot("you")
+            actions.shot(game)
 
 
 class Actions:
-    def shot(self, who_to_hit="me"):
-        print(game.round[game.bullet])
-        if who_to_hit == "you":
+    def shot(self, game):
+        who_to_hit = input("Dealer: who do you want to shot you or me ")
+        if who_to_hit.lower() == "you" or "player":
             game.healths["player"] -= game.round[game.bullet]
-        if who_to_hit == "me":
+        if who_to_hit.lower() == "me" or "dealer":
             game.healths["dealer"] -= game.round[game.bullet]
+
+    def magnifying_glass(self, game):
+        print("bullet = ", game.bullet)
+        self.i -= 1
 
 
 class Game:
@@ -32,7 +36,7 @@ class Game:
         }
         self.round = {"blank": 0, "bang": 1}
         self.shell = [
-            random.choice(["blank", "bang"]) for _ in range(random.randint(3, 9))
+            random.choice(["blank", "bang"]) for _ in range(random.randint(6, 12))
         ]
 
     @property
@@ -44,10 +48,12 @@ class Game:
         return self._healths == new_healths
 
     def get_user_input(self):
-        action = input("Dealer: do you what to shot or a item?")
-        if action.lower() == "shot":
-            who_to_hit = input("Dealer: who do you want to shot you or me")
-            self.actions_name_map[action](who_to_hit)
+        print("pleas whrite in camelcase")
+        action = input(
+            "Dealer: do you what to shot or a item? (write the name of the item you want to use)"
+        )
+
+        self.actions_name_map[action](self)
 
     def count_bullets(self):
         bullets = 0
@@ -58,15 +64,21 @@ class Game:
             else:
                 blank += 1
 
-        print(f"bullets: {bullets}, blank: {blank}")
+        print(f" totale {bullets+blank}, bullets: {bullets}, blank: {blank}")
 
     def steps(self):
-        while True:
-            for self.bullet in self.shell:
-                self.count_bullets()
-                print(self.healths)
-                dealer.steps(self.bullet)
+        self.count_bullets()
+        for self.i, self.bullet in enumerate(self.shell):
+            print("")
+            print(self.healths)
+            print("i =", self.i)
+            print((len(self.shell) - self.i) % 2 == 0)
+            if (len(self.shell) - self.i) % 2 == 0:
+                dealer.steps(game)
+            if not len(self.shell) % 2 == 0:  # or coin flip
                 self.get_user_input()
+            else:
+                RuntimeError("ingen sin turn!")
 
 
 game = Game()
