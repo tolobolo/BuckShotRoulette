@@ -9,10 +9,10 @@ class Dealer:
         print("dealer turn")
         if game.bullet == "blank":
             print("Dealer: I will shot my self")
-            self.actions.shot()
+            self.actions.shot("me")
         elif game.bullet == "bang":
             print("Dealer: I will shot you")
-            self.actions.shot()
+            self.actions.shot("you")
         game.turn = True
 
         return True
@@ -21,17 +21,24 @@ class Dealer:
 class Actions:
     def __init__(self, game):
         self.game = game
+        self.handcuffs_is_on = True
 
-    def shot(self):
-        who_to_hit = input("Dealer: who do you want to shot you or me ")
+    def shot(self, who_to_hit="me"):
         if who_to_hit.lower() == "you" or "player":
             self.game.healths["player"] -= self.game.round_value[self.game.bullet]
-        if who_to_hit.lower() == "me" or "dealer":
+        elif who_to_hit.lower() == "me" or "dealer":
             self.game.healths["dealer"] -= self.game.round_value[self.game.bullet]
-        self.game.turn = True
+
+        if self.handcuffs_is_on:
+            self.game.turn = False
+        else:
+            self.game.turn = True
 
     def spyglass(self):
         print("bullet = ", self.game.bullet)
+
+    def handcuffs(self):
+        self.handcuffs_is_on = True
 
 
 class Game:
@@ -82,22 +89,22 @@ class Game:
         print(f" totale {bullets+blank}, bullets: {bullets}, blank: {blank}")
 
     def round(self):
-        print(self.healths)
-        if (len(self.shell) - self.i) % 2 == 0:
-            self.turn = self.dealer.steps(self)
-        if not len(self.shell) % 2 == 0:  # or coin flip
-            self.get_user_input()
-        else:
-            RuntimeError("ingen sin turn!")
-        return False
+        self.get_user_input()
+
 
     def steps(self):
         self.count_bullets()
         for self.i, self.bullet in enumerate(self.shell):
             self.turn = False
             while not self.turn:
-                print("while true")
-                self.turn = self.round()
+                print(self.healths)
+                if self.i % 2 == 0:
+                    self.turn = self.dealer.steps(self)
+                if not self.i % 2 == 0:
+                    self.turn = self.round()
+                else:
+                    RuntimeError("ingen sin turn!")
+                
 
 
 def main():
