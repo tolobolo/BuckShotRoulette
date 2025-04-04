@@ -2,49 +2,75 @@ import random
 
 
 class Dealer:
-    def __init__(self, actions):
+    def __init__(self, actions, game):
+        self.game = game
         self.actions = actions
+        
+    def action_shot(self):
+      bullet = random.choice([self.game.bullet, "blank", "bang"])
+      if self.game.bullet == "blank":
+          print("Dealer: I will shot my self")
+          self.actions.shot("dealer")
+      elif self.game.bullet == "bang":
+          print("Dealer: I will shot you")
+          self.actions.shot("player")
 
-    def steps(self, game):
-        print("dealer turn")
-        if game.bullet == "blank":
-            print("Dealer: I will shot my self")
-            self.actions.shot("me")
-        elif game.bullet == "bang":
-            print("Dealer: I will shot you")
-            self.actions.shot("you")
-        game.turn = True
-
-        return True
+    def steps(self, bullets, blanks):
+      print("dealer turn")
+      self.action_shot()
 
 
 class Actions:
     def __init__(self, game):
         self.game = game
-        self.handcuffs_is_on = True
+        self.skip_turn = False
 
-    def shot(self, who_to_hit="me"):
-        if who_to_hit.lower() == "you" or "player":
+    def shot(self, who_to_hit="dealer"):
+      while True:
+        print("run")
+        if not self.game.i % 2 == 0:
+          who_to_hit = input("who do you want to shot, player or dealer")
+          
+        if who_to_hit.lower() == "player":
             self.game.healths["player"] -= self.game.round_value[self.game.bullet]
-        elif who_to_hit.lower() == "me" or "dealer":
+        elif who_to_hit.lower() == "dealer":
             self.game.healths["dealer"] -= self.game.round_value[self.game.bullet]
-
-        if self.handcuffs_is_on:
-            self.game.turn = False
+            if self.game.bullet == "blank":
+              self.skip_turn = True
         else:
-            self.game.turn = True
+          print("that is not a answer")
+          continue
+
+        if self.skip_turn:
+          self.game.turn = False
+          self.skip_turn = False
+        else:
+          self.game.turn = True
 
     def spyglass(self):
         print("bullet = ", self.game.bullet)
+    
+    def smoke(self):
+      if self.game.i % 2 == 0:
+          self.game.healths["dealer"] += 1
+      elif not self.game.i % 2 == 0:
+          self.game.healths["player"] += 1
+      else:
+        print("somtihing is wrong")
+        
+    def beer(self):
+      print("bullet",self.game.shell[self.game.i] )
+      self.game.shell.remove(self.game.i)
 
     def handcuffs(self):
-        self.handcuffs_is_on = True
+        print("Dealer: fine I will cuff my self")
+        self.skip_turn = True
 
 
 class Game:
     def __init__(self, starting_health=3):
-        self.actions = actions = Actions(self)
-        self.dealer = Dealer(actions)
+        self.actions = Actions(self)
+        self.dealer = Dealer(self.actions, self)
         self._healths = {
             "dealer": starting_health,
             "player": starting_health,
@@ -52,6 +78,9 @@ class Game:
         self.actions_name_map = {
             "shot": self.actions.shot,
             "spyglass": self.actions.spyglass,
+            "handcuffs": self.actions.handcuffs,
+            "beer": self.actions.beer,
+            "smoke": self.actions.smoke,
         }
         self.round_value = {"blank": 0, "bang": 1}
         self.shell = [
@@ -79,27 +108,30 @@ class Game:
 
     def count_bullets(self):
         bullets = 0
-        blank = 0
+        blanks = 0
         for i in self.shell:
             if i == "bang":
                 bullets += 1
             else:
-                blank += 1
+                blanks += 1
 
-        print(f" totale {bullets+blank}, bullets: {bullets}, blank: {blank}")
+        
+        return bullets, blanks
 
-    def round(self):
+    def round(self):  
+      self.turn = False
+      while not self.turn:
         self.get_user_input()
 
 
     def steps(self):
-        self.count_bullets()
+        bullets, blanks = self.count_bullets()
+        print(f"bullets: {bullets}, blank: {blanks}")
         for self.i, self.bullet in enumerate(self.shell):
-            self.turn = False
-            while not self.turn:
                 print(self.healths)
                 if self.i % 2 == 0:
-                    self.turn = self.dealer.steps(self)
+                  bullets, blanks = self.count_bullets()
+                  self.dealer.steps(bullets, blanks)
                 if not self.i % 2 == 0:
                     self.turn = self.round()
                 else:
