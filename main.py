@@ -1,5 +1,5 @@
 import random
-
+import math
 
 class Dealer:
     def __init__(self, actions, game):
@@ -17,35 +17,47 @@ class Dealer:
 
     def steps(self, bullets, blanks):
       print("dealer turn")
-      self.action_shot()
+      chance = math.ceil((bullets/(bullets+blanks))*100)
+      print("chance", chance)
+      #if have smoke and healths is not 3 use smoke
+      if chance =< 50:
+        pass # spyglass
+      if chance == 50: # and have cuffs
+        pass # handcuffs
+      elif chance == 50:
+        pass # beer
+      if chance => 50:  
+        self.action_shot()
+        
+      
 
 
 class Actions:
     def __init__(self, game):
         self.game = game
         self.skip_turn = False
+        self.double_attack = 1
 
     def shot(self, who_to_hit="dealer"):
-      while True:
-        print("run")
         if not self.game.i % 2 == 0:
           who_to_hit = input("who do you want to shot, player or dealer")
-          
+        
         if who_to_hit.lower() == "player":
-            self.game.healths["player"] -= self.game.round_value[self.game.bullet]
+            self.game.healths["player"] -= self.game.round_value[self.game.bullet] * self.double_damage
         elif who_to_hit.lower() == "dealer":
-            self.game.healths["dealer"] -= self.game.round_value[self.game.bullet]
+            self.game.healths["dealer"] -= self.game.round_value[self.game.bullet] * self.double_damage
             if self.game.bullet == "blank":
               self.skip_turn = True
         else:
           print("that is not a answer")
-          continue
+          self.skip_turn = True
 
         if self.skip_turn:
           self.game.turn = False
           self.skip_turn = False
         else:
           self.game.turn = True
+        self.double_damage = 1
 
     def spyglass(self):
         print("bullet = ", self.game.bullet)
@@ -65,6 +77,9 @@ class Actions:
     def handcuffs(self):
         print("Dealer: fine I will cuff my self")
         self.skip_turn = True
+    
+    def saw(self):
+      self.double_attack = 2
 
 
 class Game:
