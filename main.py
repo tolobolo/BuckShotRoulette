@@ -33,7 +33,7 @@ class Actions:
     def __init__(self, game):
         self.game = game
         self.skip_turn = False
-        self.double_attack = 1
+        self.double_damage = 1
 
     def shot(self, who_to_hit="dealer"):
         if not self.game.i % 2 == 0:
@@ -87,6 +87,9 @@ class Game:
     def __init__(self, starting_health=3):
         self.actions = Actions(self)
         self.dealer = Dealer(self.actions, self)
+        self.player_inventory = []
+        self.dealer_inventory = []
+        # give items
         self._healths = {
             "dealer": starting_health,
             "player": starting_health,
@@ -104,6 +107,22 @@ class Game:
         ]
         self.turn = False
 
+    def distributing_items(self):
+        items = [
+            "beer",
+            "spyglass",
+            "handcuffs",
+            "smoke",
+        ]
+        for _ in range(4):
+            # players item
+            item = random.choice(items)
+            print("you got a ", item)
+            self.player_inventory.append(item)
+            # dealer item
+            item = random.choice(items)
+            self.dealer_inventory.append(item)
+
     @property
     def healths(self):
         return self._healths
@@ -116,11 +135,14 @@ class Game:
         action = input(
             "Dealer: do you what to shot or a item? (write the name of the item you want to use)"
         )
-        try:
-            self.actions_name_map[action]()
-        except KeyError:
-            print("that is not a action")
-            return
+        if action in self.player_inventory or action == "shot":
+            try:
+                self.actions_name_map[action]()
+            except KeyError:
+                print("that is not a action")
+                return
+        else:
+            print("you do not have a", action)
 
     def count_bullets(self):
         bullets = 0
@@ -141,15 +163,18 @@ class Game:
     def steps(self):
         bullets, blanks = self.count_bullets()
         print(f"bullets: {bullets}, blank: {blanks}")
-        for self.i, self.bullet in enumerate(self.shell):
-            print(self.healths)
-            if self.i % 2 == 0:
-                bullets, blanks = self.count_bullets()
-                self.dealer.steps(bullets, blanks)
-            if not self.i % 2 == 0:
-                self.turn = self.round()
-            else:
-                RuntimeError("ingen sin turn!")
+        while True:
+            if not self.healths["player"] <= 0 and not self.healths["dealer"] <= 0:
+                self.distributing_items()
+                for self.i, self.bullet in enumerate(self.shell):
+                    print(self.healths)
+                    if self.i % 2 == 0:
+                        bullets, blanks = self.count_bullets()
+                        self.dealer.steps(bullets, blanks)
+                    if not self.i % 2 == 0:
+                        self.turn = self.round()
+                    else:
+                        RuntimeError("ingen sin turn!")
 
 
 def main():
