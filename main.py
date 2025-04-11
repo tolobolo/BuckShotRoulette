@@ -20,13 +20,17 @@ class Dealer:
         print("dealer turn")
         chance = math.ceil((bullets / (bullets + blanks)) * 100)
         print("chance", chance)
-        # if have smoke and healths is not 3 use smoke
-        if chance <= 50:
+        # need a while loop
+        if "smoke" in self.game.dealer_inventory and self.game.healths["dealer"] > 3:
+            self.game.dealer_inventory.remove("smoke")
+            self.actions.smoke("dealer")
+        if chance <= 50 and "spyglass" in self.game.dealer_inventory:
+            self.game.dealer_inventory.remove("spyglass")
             pass  # spyglass
-        if chance == 50:  # and have cuffs
-            pass  # handcuffs 
-        elif chance == 50:
-            pass # beer
+        if chance == 50 and "handcuffs" in self.game.dealer_inventory:  # and have cuffs
+            pass  # handcuffs
+        if chance == 50 and "beer" in self.game.dealer_inventory:
+            pass  # beer
         if chance >= 50:
             self.action_shot()
 
@@ -41,21 +45,15 @@ class Actions:
         if not self.game.i % 2 == 0:
             who_to_hit = input("who do you want to shot, player or dealer? ")
 
-        if who_to_hit.lower() == "player":
-            self.game.healths["player"] -= (
+        try:
+            self.game.healths[who_to_hit] -= (
                 self.game.round_value[self.game.bullet] * self.double_damage
             )
-            if self.game.bullet == "blank" and self.game.player_turn:
-                self.skip_turn = True
-
-        elif who_to_hit.lower() == "dealer":
-            self.game.healths["dealer"] -= (
-                self.game.round_value[self.game.bullet] * self.double_damage
-            )
-            if self.game.bullet == "blank" and not self.game.player_turn:
-                self.skip_turn = True
-        else:
+        except KeyError:
             print("that is not a answer")
+            self.skip_turn = True
+
+        if self.game.bullet == "blank" and self.game.player_turn:
             self.skip_turn = True
 
         if self.skip_turn:
@@ -68,17 +66,13 @@ class Actions:
     def spyglass(self):
         print("bullet = ", self.game.bullet)
 
-    def smoke(self):
-        if self.game.player_turn:
-            self.game.healths["player"] += 1
-        elif not self.game.player_turn:
-            self.game.healths["dealer"] += 1
-        else:
-            print("somtihing is wrong")
+    def smoke(self, user="player"):
+        self.game.healths[user] += 1
 
     def beer(self):
         print("bullet", self.game.shell[self.game.i])
-        self.game.shell.remove(self.game.i)
+        item_to_remove = self.game.shell[self.game.i]
+        self.game.shell.remove(item_to_remove)
 
     def handcuffs(self):
         print("Dealer: fine I will cuff my self")
