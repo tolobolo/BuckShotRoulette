@@ -6,33 +6,49 @@ class Dealer:
     def __init__(self, actions, game):
         self.game = game
         self.actions = actions
+        self.bullet = None
+        self.turn = False
 
     def action_shot(self):
-        bullet = random.choice([self.game.bullet, "blank", "bang"])
-        if bullet == "blank":
+        self.bullet = random.choice([self.game.bullet, "blank", "bang"])
+        if self.bullet == "blank":
             print("Dealer: I will shot my self")
-            self.actions.shot("dealer")
-        elif bullet == "bang":
+            self.turn = self.actions.shot("dealer", "dealer")
+        elif self.bullet == "bang":
             print("Dealer: I will shot you")
-            self.actions.shot("player")
+            self.turn = self.actions.shot("player", "dealer")
+        self.bullet = None
 
     def steps(self, bullets, blanks):
         print("dealer turn")
         chance = math.ceil((bullets / (bullets + blanks)) * 100)
         print("chance", chance)
-        # need a while loop
-        if "smoke" in self.game.dealer_inventory and self.game.healths["dealer"] > 3:
-            self.game.dealer_inventory.remove("smoke")
-            self.actions.smoke("dealer")
-        if chance <= 50 and "spyglass" in self.game.dealer_inventory:
-            self.game.dealer_inventory.remove("spyglass")
-            pass  # spyglass
-        if chance == 50 and "handcuffs" in self.game.dealer_inventory:  # and have cuffs
-            pass  # handcuffs
-        if chance == 50 and "beer" in self.game.dealer_inventory:
-            pass  # beer
-        if chance >= 50:
-            self.action_shot()
+        self.turn = False
+        while not self.turn:
+            print("dealer.turn", self.turn)
+            if (
+                "smoke" in self.game.dealer_inventory
+                and self.game.healths["dealer"] >= 3
+            ):
+                print("dealer smokes")
+                self.game.dealer_inventory.remove("smoke")
+                self.actions.smoke("dealer")
+            if "spyglass" in self.game.dealer_inventory:
+                print("Dealer: very intesting, dealer uses a spyglass")
+                self.game.dealer_inventory.remove("spyglass")
+                self.bullet = self.actions.spyglass("dealer")
+            if chance == 50 and "handcuffs" in self.game.dealer_inventory:
+                self.game.dealer_inventory.remove("handcuffs")
+                self.actions.handcuffs()
+            if chance == 50 and "beer" in self.game.dealer_inventory:
+                print("dealer: I will remove a bullet, dealer drinks a beer")
+                self.game.dealer_inventory.remove("beer")
+                self.actions.beer()
+            if chance >= 50 or not self.bullet == None:
+                print("dealer shots")
+                self.action_shot()
+            else:
+                self.action_shot()
 
 
 class Actions:
@@ -41,30 +57,42 @@ class Actions:
         self.skip_turn = False
         self.double_damage = 1
 
-    def shot(self, who_to_hit="dealer"):
+    def shot(self, who_to_hit="dealer", user="player"):
         if not self.game.i % 2 == 0:
             who_to_hit = input("who do you want to shot, player or dealer? ")
 
-        try:
-            self.game.healths[who_to_hit] -= (
+        if who_to_hit.lower() == "player":
+            self.game.healths["player"] -= (
                 self.game.round_value[self.game.bullet] * self.double_damage
             )
-        except KeyError:
-            print("that is not a answer")
-            self.skip_turn = True
+            if self.game.bullet == "blank" and self.game.player_turn:
+                self.skip_turn = True
+                print(self.game.healths)
 
-        if self.game.bullet == "blank" and self.game.player_turn:
-            self.skip_turn = True
+        elif who_to_hit.lower() == "dealer":
+            self.game.healths["dealer"] -= (
+                self.game.round_value[self.game.bullet] * self.double_damage
+            )
+            if self.game.bullet == "blank" and not self.game.player_turn:
+                self.skip_turn = True
 
         if self.skip_turn:
-            self.game.turn = False
-            self.skip_turn = False
+            if user == "player":
+                self.game.turn = False
+                self.skip_turn = False
+            else:
+                return True
+
+            print("health", self.game.healths)
         else:
             self.game.turn = True
         self.double_damage = 1
 
-    def spyglass(self):
-        print("bullet = ", self.game.bullet)
+    def spyglass(self, user="player"):
+        if user == "player":
+            print("bullet = ", self.game.bullet)
+        else:
+            return self.game.bullet
 
     def smoke(self, user="player"):
         self.game.healths[user] += 1
@@ -79,7 +107,7 @@ class Actions:
         self.skip_turn = True
 
     def saw(self):
-        self.double_attack = 2
+        self.double_damage = 2
         print("double damage")
 
 
@@ -141,7 +169,6 @@ class Game:
         )
         if action in self.player_inventory or action == "shot":
             if not action == "shot":
-                print("remove item")
                 self.player_inventory.remove(action)
                 print("player inventory", self.player_inventory)
             try:
@@ -171,10 +198,11 @@ class Game:
     def steps(self):
         bullets, blanks = self.count_bullets()
         print(f"bullets: {bullets}, blank: {blanks}")
-        while not self.healths["player"] <= 0 and not self.healths["dealer"] <= 0:
+        while self.healths["player"] > 0 and self.healths["dealer"] > 0:
             self.distributing_items()
             for self.i, self.bullet in enumerate(self.shell, start=1):
                 print(self.healths)
+                print(self.player_inventory)
                 if self.i % 2 == 0:
                     self.player_turn = False
                     bullets, blanks = self.count_bullets()
@@ -188,7 +216,7 @@ class Game:
                 if self._healths["player"] <= 0:
                     print("you lose")
                     break
-                elif self._healths["dealer"] <= 0:
+                if self._healths["dealer"] <= 0:
                     print("you have won")
                     break
                 else:
