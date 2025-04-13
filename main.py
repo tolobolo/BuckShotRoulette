@@ -1,5 +1,8 @@
+from ast import With
 import random
 import math
+import os
+import time
 
 
 class Dealer:
@@ -21,11 +24,13 @@ class Dealer:
 
     def steps(self, bullets, blanks):
         print("dealer turn")
+        print(self.game.healths)
+        time.sleep(1)
         chance = math.ceil((bullets / (bullets + blanks)) * 100)
-        print("chance", chance)
         self.turn = False
         while not self.turn:
-            print("dealer.turn", self.turn)
+            print(" ")
+
             if (
                 "smoke" in self.game.dealer_inventory
                 and self.game.healths["dealer"] >= 3
@@ -34,14 +39,15 @@ class Dealer:
                 self.game.dealer_inventory.remove("smoke")
                 self.actions.smoke("dealer")
             if "spyglass" in self.game.dealer_inventory:
-                print("Dealer: very intesting, dealer uses a spyglass")
+                print("Dealer: very intesting, (dealer uses a spyglass)")
                 self.game.dealer_inventory.remove("spyglass")
                 self.bullet = self.actions.spyglass("dealer")
             if chance == 50 and "handcuffs" in self.game.dealer_inventory:
+                print("dealer: but this on, (dealer uses handcuffs)")
                 self.game.dealer_inventory.remove("handcuffs")
-                self.actions.handcuffs()
+                self.actions.handcuffs("dealer")
             if chance == 50 and "beer" in self.game.dealer_inventory:
-                print("dealer: I will remove a bullet, dealer drinks a beer")
+                print("dealer: I will remove a bullet, (dealer drinks a beer)")
                 self.game.dealer_inventory.remove("beer")
                 self.actions.beer()
             if chance >= 50 or not self.bullet == None:
@@ -49,6 +55,10 @@ class Dealer:
                 self.action_shot()
             else:
                 self.action_shot()
+
+        print(" ")
+        input("write anything to continue")
+        os.system("clear")
 
 
 class Actions:
@@ -75,14 +85,12 @@ class Actions:
             if self.game.bullet == "blank" and not self.game.player_turn:
                 self.skip_turn = True
 
-        print("skip turn 1", self.skip_turn)
         next = None
 
         if self.skip_turn:
             self.skip_turn = False
             if user == "player":
                 self.game.turn = False
-                print("skip turn 2", self.skip_turn)
             else:
                 print("health", self.game.healths)
                 next = False
@@ -91,7 +99,6 @@ class Actions:
             next = True
 
         self.double_damage = 1
-        print("next", next)
         return next
 
     def spyglass(self, user="player"):
@@ -109,8 +116,8 @@ class Actions:
         item_to_remove = self.game.shell[self.game.i]
         self.game.shell.remove(item_to_remove)
 
-    def handcuffs(self):
-        print(" user will cuff")
+    def handcuffs(self, user="you"):
+        print(user, " will cuff your self")
         self.skip_turn = True
         print("skip turn", self.skip_turn)
 
@@ -183,6 +190,7 @@ class Game:
                 self.actions_name_map[action]()
             except KeyError:
                 print("that is not a action")
+                time.sleep(2)
                 return
         else:
             print("you do not have a", action)
@@ -201,7 +209,11 @@ class Game:
     def round(self):
         self.turn = False
         while not self.turn:
+            print("invenotry", self.healths)
+            print(self.player_inventory)
             self.get_user_input()
+            time.sleep(3)
+            os.system("clear")
 
     def steps(self):
         bullets, blanks = self.count_bullets()
@@ -209,8 +221,6 @@ class Game:
         while self.healths["player"] > 0 and self.healths["dealer"] > 0:
             self.distributing_items()
             for self.i, self.bullet in enumerate(self.shell, start=1):
-                print(self.healths)
-                print(self.player_inventory)
                 if self.i % 2 == 0:
                     self.player_turn = False
                     bullets, blanks = self.count_bullets()
