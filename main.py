@@ -80,19 +80,20 @@ class Actions:
             if user == "player":
                 self.game.turn = False
                 self.skip_turn = False
-            else:
-                return True
 
             print("health", self.game.healths)
+            next = True
         else:
             self.game.turn = True
+            next = False
         self.double_damage = 1
+        return next
 
     def spyglass(self, user="player"):
         if user == "player":
             print("bullet = ", self.game.bullet)
-        else:
-            return self.game.bullet
+
+        return self.game.bullet
 
     def smoke(self, user="player"):
         self.game.healths[user] += 1
@@ -103,7 +104,7 @@ class Actions:
         self.game.shell.remove(item_to_remove)
 
     def handcuffs(self):
-        print("Dealer: fine I will cuff my self")
+        print(" user will cuff")
         self.skip_turn = True
 
     def saw(self):
@@ -210,8 +211,6 @@ class Game:
                 elif not self.i % 2 == 0:
                     self.player_turn = True
                     self.round()
-                else:
-                    RuntimeError("ingen sin turn!")
 
                 if self._healths["player"] <= 0:
                     print("you lose")
@@ -219,8 +218,6 @@ class Game:
                 if self._healths["dealer"] <= 0:
                     print("you have won")
                     break
-                else:
-                    print("no died")
 
 
 def main():
