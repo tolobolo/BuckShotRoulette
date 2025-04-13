@@ -1,4 +1,5 @@
-from ast import With
+"my version of BuckShotRoulette"
+
 import random
 import math
 import os
@@ -12,17 +13,17 @@ class Dealer:
         self.bullet = None
         self.turn = False
 
-    def action_shot(self):
+    def action_shoot(self):
         self.bullet = random.choice([self.game.bullet, "blank", "bang"])
         if self.bullet == "blank":
-            print("Dealer: I will shot my self")
-            self.turn = self.actions.shot("dealer", "dealer")
+            print("Dealer: I will shoot my self")
+            self.turn = self.actions.shoot("dealer", "dealer")
         elif self.bullet == "bang":
-            print("Dealer: I will shot you")
-            self.turn = self.actions.shot("player", "dealer")
+            print("Dealer: I will shoot you")
+            self.turn = self.actions.shoot("player", "dealer")
         self.bullet = None
 
-    def steps(self, bullets, blanks):
+    def step(self, bullets, blanks):
         print("dealer turn")
         print(self.game.healths)
         time.sleep(1)
@@ -50,11 +51,11 @@ class Dealer:
                 print("dealer: I will remove a bullet, (dealer drinks a beer)")
                 self.game.dealer_inventory.remove("beer")
                 self.actions.beer()
-            if chance >= 50 or not self.bullet == None:
-                print("dealer shots")
-                self.action_shot()
+            if chance >= 50 or self.bullet is not None:
+                print("dealer shoots")
+                self.action_shoot()
             else:
-                self.action_shot()
+                self.action_shoot()
 
         print(" ")
         input("write anything to continue")
@@ -67,9 +68,9 @@ class Actions:
         self.skip_turn = False
         self.double_damage = 1
 
-    def shot(self, who_to_hit="dealer", user="player"):
-        if not self.game.i % 2 == 0:
-            who_to_hit = input("who do you want to shot, player or dealer? ")
+    def shoot(self, who_to_hit="dealer", user="player"):
+        if not self.game.shell_index % 2 == 0:
+            who_to_hit = input("who do you want to shoot, player or dealer? ")
 
         if who_to_hit.lower() == "player":
             self.game.healths["player"] -= (
@@ -85,7 +86,7 @@ class Actions:
             if self.game.bullet == "blank" and not self.game.player_turn:
                 self.skip_turn = True
 
-        next = None
+        switch = False
 
         if self.skip_turn:
             self.skip_turn = False
@@ -93,13 +94,14 @@ class Actions:
                 self.game.turn = False
             else:
                 print("health", self.game.healths)
-                next = False
+                switch = False
         else:
             self.game.turn = True
-            next = True
+            switch = True
 
         self.double_damage = 1
-        return next
+        print(self.game.bullet)
+        return switch
 
     def spyglass(self, user="player"):
         if user == "player":
@@ -109,11 +111,17 @@ class Actions:
 
     def smoke(self, user="player"):
         self.game.healths[user] += 1
+
+        if self.game.healths[user] >= 3 and user == "player":
+            self.game.healths[user] = 3
+            self.game.player_inventory.append("smoke")
+            print("you have full health")
+
         print("health", self.game.healths)
 
     def beer(self):
-        print("bullet", self.game.shell[self.game.i])
-        item_to_remove = self.game.shell[self.game.i]
+        print("bullet", self.game.shell[self.game.shell_index])
+        item_to_remove = self.game.shell[self.game.shell_index]
         self.game.shell.remove(item_to_remove)
 
     def handcuffs(self, user="you"):
@@ -134,13 +142,15 @@ class Game:
         self.dealer_inventory = []
         self.player_turn = False
         self.dealer_turn = False
+        self.shell_index = None
+        self.bullet = None
         # give items
         self._healths = {
             "dealer": starting_health,
             "player": starting_health,
         }
         self.actions_name_map = {
-            "shot": self.actions.shot,
+            "shoot": self.actions.shoot,
             "spyglass": self.actions.spyglass,
             "handcuffs": self.actions.handcuffs,
             "beer": self.actions.beer,
@@ -164,7 +174,6 @@ class Game:
         for _ in range(4):
             # players item
             item = random.choice(items)
-            print("you got a ", item)
             self.player_inventory.append(item)
             # dealer item
             item = random.choice(items)
@@ -180,10 +189,10 @@ class Game:
 
     def get_user_input(self):
         action = input(
-            "Dealer: do you what to shot or a item? (write the name of the item you want to use) "
+            "Dealer: do you what to shoot or use a item? (write the name of the item you want to use or 'shoot') "
         )
-        if action in self.player_inventory or action == "shot":
-            if not action == "shot":
+        if action in self.player_inventory or action == "shoot":
+            if not action == "shoot":
                 self.player_inventory.remove(action)
                 print("player inventory", self.player_inventory)
             try:
@@ -209,37 +218,40 @@ class Game:
     def round(self):
         self.turn = False
         while not self.turn:
-            print("invenotry", self.healths)
-            print(self.player_inventory)
+            print("healths", self.healths)
+            print("invenotory", self.player_inventory)
             self.get_user_input()
             time.sleep(3)
             os.system("clear")
 
-    def steps(self):
+    def step(self):
+        self.distributing_items()
+        for self.shell_index, self.bullet in enumerate(self.shell, start=1):
+            if self.shell_index % 2 == 0:
+                self.player_turn = False
+                bullets, blanks = self.count_bullets()
+                self.dealer.step(bullets, blanks)
+            elif not self.shell_index % 2 == 0:
+                self.player_turn = True
+                self.round()
+
+            if self._healths["player"] <= 0:
+                print("you lose")
+                break
+            if self._healths["dealer"] <= 0:
+                print("you have won")
+                break
+
+    def run(self):
         bullets, blanks = self.count_bullets()
         print(f"bullets: {bullets}, blank: {blanks}")
         while self.healths["player"] > 0 and self.healths["dealer"] > 0:
-            self.distributing_items()
-            for self.i, self.bullet in enumerate(self.shell, start=1):
-                if self.i % 2 == 0:
-                    self.player_turn = False
-                    bullets, blanks = self.count_bullets()
-                    self.dealer.steps(bullets, blanks)
-                elif not self.i % 2 == 0:
-                    self.player_turn = True
-                    self.round()
-
-                if self._healths["player"] <= 0:
-                    print("you lose")
-                    break
-                if self._healths["dealer"] <= 0:
-                    print("you have won")
-                    break
+            self.step()
 
 
 def main():
     game = Game()
-    game.steps()
+    game.run()
 
 
 main()
