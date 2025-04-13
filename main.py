@@ -67,7 +67,6 @@ class Actions:
             )
             if self.game.bullet == "blank" and self.game.player_turn:
                 self.skip_turn = True
-                print(self.game.healths)
 
         elif who_to_hit.lower() == "dealer":
             self.game.healths["dealer"] -= (
@@ -76,17 +75,23 @@ class Actions:
             if self.game.bullet == "blank" and not self.game.player_turn:
                 self.skip_turn = True
 
+        print("skip turn 1", self.skip_turn)
+        next = None
+
         if self.skip_turn:
+            self.skip_turn = False
             if user == "player":
                 self.game.turn = False
-                self.skip_turn = False
-
-            print("health", self.game.healths)
-            next = True
+                print("skip turn 2", self.skip_turn)
+            else:
+                print("health", self.game.healths)
+                next = False
         else:
             self.game.turn = True
-            next = False
+            next = True
+
         self.double_damage = 1
+        print("next", next)
         return next
 
     def spyglass(self, user="player"):
@@ -97,6 +102,7 @@ class Actions:
 
     def smoke(self, user="player"):
         self.game.healths[user] += 1
+        print("health", self.game.healths)
 
     def beer(self):
         print("bullet", self.game.shell[self.game.i])
@@ -106,6 +112,7 @@ class Actions:
     def handcuffs(self):
         print(" user will cuff")
         self.skip_turn = True
+        print("skip turn", self.skip_turn)
 
     def saw(self):
         self.double_damage = 2
