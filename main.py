@@ -163,6 +163,51 @@ class Game:
         ]
         self.turn = False
 
+    def rules(self):
+        os.system("clear")
+        print("Rules")
+        print(" ")
+        print("you and the a dealer with is a robot, exchange a gun with each other.")
+        print("this gun has x number of bullets and x number of blanks.")
+        print(
+            "when you shoot the dealer or your self whit a bullet it is the next person turn, but if you shoot you self whit a blank you can keep on playing"
+        )
+        print(
+            "you and the dealer will exchange util one has died if the gun get empty. it will be reloaded"
+        )
+        print(" ")
+        print("Items/Actions")
+        print("")
+        print("Beer")
+        print("when you drink a beer you remove the bullet that was coming")
+        print(" ")
+        print("Handcuffs")
+        print(
+            "you can handcuff the dealer and get keep on playing until you shoot again"
+        )
+        print("if you shoot you self whit a blank you still get to keep playing")
+        print(" ")
+        print("Saw")
+        print("you can cut off the barrel and get double damage on your shoot action")
+        print(" ")
+        print("shoot")
+        print(
+            "you can shoot the gun. if you shoot whit someone whit a  bullet he tak 1 damage."
+        )
+        print(
+            "if you shoot and it is empty you tak 0 damage but if you shoot your self you get to keep on playing "
+        )
+        print(" ")
+        print("Smoke")
+        print("you heal youself with 1 (not over 3)")
+        print(" ")
+        print("spyglass")
+        print("if you use the spyglass it will show the bullet that is loaded now")
+
+        print(" ")
+        input("write anything to continue")
+        os.system("clear")
+
     def distributing_items(self):
         items = [
             "beer",
@@ -188,9 +233,14 @@ class Game:
         return self._healths == new_healths
 
     def get_user_input(self):
+        print("whrite `r` if you want to read the rules")
         action = input(
             "Dealer: do you what to shoot or use a item? (write the name of the item you want to use or 'shoot') "
         )
+        if action.lower() == "r":
+            self.rules()
+            return
+
         if action in self.player_inventory or action == "shoot":
             if not action == "shoot":
                 self.player_inventory.remove(action)
@@ -226,6 +276,9 @@ class Game:
 
     def step(self):
         self.distributing_items()
+        bullets, blanks = self.count_bullets()
+        print("reload the gun")
+        print(f"bullets: {bullets}, blank: {blanks}")
         for self.shell_index, self.bullet in enumerate(self.shell, start=1):
             if self.shell_index % 2 == 0:
                 self.player_turn = False
@@ -243,8 +296,6 @@ class Game:
                 break
 
     def run(self):
-        bullets, blanks = self.count_bullets()
-        print(f"bullets: {bullets}, blank: {blanks}")
         while self.healths["player"] > 0 and self.healths["dealer"] > 0:
             self.step()
 
