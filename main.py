@@ -34,11 +34,17 @@ class Dealer:
 
             if (
                 "smoke" in self.game.dealer_inventory
-                and self.game.healths["dealer"] >= 3
+                and self.game.healths["dealer"] < 4
             ):
                 print("dealer smokes")
                 self.game.dealer_inventory.remove("smoke")
                 self.actions.smoke("dealer")
+                continue
+            if chance == 50 and "beer" in self.game.dealer_inventory:
+                print("dealer: I will remove a bullet, (dealer drinks a beer)")
+                self.game.dealer_inventory.remove("beer")
+                self.actions.beer()
+                continue
             if "spyglass" in self.game.dealer_inventory:
                 print("Dealer: very intesting, (dealer uses a spyglass)")
                 self.game.dealer_inventory.remove("spyglass")
@@ -46,11 +52,8 @@ class Dealer:
             if chance == 50 and "handcuffs" in self.game.dealer_inventory:
                 print("dealer: but this on, (dealer uses handcuffs)")
                 self.game.dealer_inventory.remove("handcuffs")
-                self.actions.handcuffs("dealer")
-            if chance == 50 and "beer" in self.game.dealer_inventory:
-                print("dealer: I will remove a bullet, (dealer drinks a beer)")
-                self.game.dealer_inventory.remove("beer")
-                self.actions.beer()
+                self.actions.handcuffs("you")
+
             if chance >= 50 or self.bullet is not None:
                 print("dealer shoots")
                 self.action_shoot()
@@ -110,12 +113,12 @@ class Actions:
         return self.game.bullet
 
     def smoke(self, user="player"):
-        self.game.healths[user] += 1
-
-        if self.game.healths[user] >= 3 and user == "player":
-            self.game.healths[user] = 3
+        if self.game.healths[user] <= 4 and user == "player":
+            self.game.healths[user] = 4
             self.game.player_inventory.append("smoke")
             print("you have full health")
+        else:
+            self.game.healths[user] += 1
 
         print("health", self.game.healths)
 
@@ -124,10 +127,9 @@ class Actions:
         item_to_remove = self.game.shell[self.game.shell_index]
         self.game.shell.remove(item_to_remove)
 
-    def handcuffs(self, user="you"):
-        print(user, " will cuff your self")
+    def handcuffs(self, user="dealer"):
+        print(user, " is cuff ")
         self.skip_turn = True
-        print("skip turn", self.skip_turn)
 
     def saw(self):
         self.double_damage = 2
@@ -135,7 +137,7 @@ class Actions:
 
 
 class Game:
-    def __init__(self, starting_health=3):
+    def __init__(self, starting_health=4):
         self.actions = Actions(self)
         self.dealer = Dealer(self.actions, self)
         self.player_inventory = []
@@ -159,50 +161,48 @@ class Game:
         }
         self.round_value = {"blank": 0, "bang": 1}
         self.shell = [
-            random.choice(["blank", "bang"]) for _ in range(random.randint(6, 12))
+            random.choice(["blank", "bang"]) for _ in range(random.randint(4, 6))
         ]
         self.turn = False
 
     def rules(self):
         os.system("clear")
-        print("Rules")
-        print(" ")
-        print("you and the a dealer with is a robot, exchange a gun with each other.")
-        print("this gun has x number of bullets and x number of blanks.")
-        print(
-            "when you shoot the dealer or your self whit a bullet it is the next person turn, but if you shoot you self whit a blank you can keep on playing"
-        )
-        print(
-            "you and the dealer will exchange util one has died if the gun get empty. it will be reloaded"
-        )
-        print(" ")
-        print("Items/Actions")
-        print("")
-        print("Beer")
-        print("when you drink a beer you remove the bullet that was coming")
-        print(" ")
-        print("Handcuffs")
-        print(
-            "you can handcuff the dealer and get keep on playing until you shoot again"
-        )
-        print("if you shoot you self whit a blank you still get to keep playing")
-        print(" ")
-        print("Saw")
-        print("you can cut off the barrel and get double damage on your shoot action")
-        print(" ")
-        print("shoot")
-        print(
-            "you can shoot the gun. if you shoot whit someone whit a  bullet he tak 1 damage."
-        )
-        print(
-            "if you shoot and it is empty you tak 0 damage but if you shoot your self you get to keep on playing "
-        )
-        print(" ")
-        print("Smoke")
-        print("you heal youself with 1 (not over 3)")
-        print(" ")
-        print("spyglass")
-        print("if you use the spyglass it will show the bullet that is loaded now")
+        print("""
+        Rules
+
+        You and the dealer (a robot) take turns exchanging a gun.
+        This gun contains a mix of bullets and blanks.
+
+        When you shoot the dealer or yourself with a **bullet**, it becomes the other person's turn.
+        If you shoot yourself with a **blank**, you get to keep playing.
+        If you shoot yourself with a **bullet**, you lose 1 health
+
+        You and the dealer continue taking turns until one of you run out of health.
+        If the gun runs out of ammunition, it will be reloaded.
+
+        Items & Actions
+
+        Beer
+        Drink a beer to remove the next incoming bullet.
+
+        Handcuffs
+        Use handcuffs to restrain the dealer, allowing you to keep playing after having shot someoe once.
+        If you shoot yourself with a blank while the dealer is handcuffed, you still keep playing.
+
+        Saw
+        Cut off the barrel of the gun to double the damage when you shoot.
+
+        Shoot
+        Fire the gun. If you shoot someone with a bullet, they take 1 damage.
+        If the gun is empty, no damage is dealt.
+        If you shoot yourself and it’s a blank or the gun is empty, you keep playing.
+
+        Smoke
+        Heal yourself by 1 point (max health is 3).
+
+        Spyglass
+        Use the spyglass to see the next round in the chamber.
+        """)
 
         print(" ")
         input("write anything to continue")
@@ -233,11 +233,11 @@ class Game:
         return self._healths == new_healths
 
     def get_user_input(self):
-        print("whrite `r` if you want to read the rules")
+        print("whrite `help` if you want to read the rules")
         action = input(
             "Dealer: do you what to shoot or use a item? (write the name of the item you want to use or 'shoot') "
         )
-        if action.lower() == "r":
+        if action.lower() == "help":
             self.rules()
             return
 
@@ -302,6 +302,7 @@ class Game:
 
 def main():
     game = Game()
+    game.rules()
     game.run()
 
 
